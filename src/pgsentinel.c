@@ -66,6 +66,7 @@ static void ash_post_parse_analyze(ParseState *pstate, Query *query);
 static int ash_sampling_period = 1;
 static int ash_max_entries = 1000;
 static int pgssh_max_entries = 10000;
+static bool pgssh_enable = false;
 static int pgsentinel_restart_period = 7;
 static int ash_restart_wait_time = 2;
 char *pgsentinelDbName = "postgres";
@@ -1198,6 +1199,17 @@ pgsentinel_load_params(void)
 							10000,
 							10000,
 							INT_MAX,
+							PGC_SIGHUP,
+							0,
+							NULL,
+							NULL,
+							NULL);
+
+	DefineCustomBoolVariable("pgsentinel_pgssh.enable",
+				                        "Enable pg_stat_statements_history.",
+							NULL,
+							&pgssh_enable,
+							true,
 							PGC_SIGHUP,
 							0,
 							NULL,
