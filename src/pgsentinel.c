@@ -451,13 +451,16 @@ ash_shmem_startup(void)
 	        IntEntryArray[0].pgsshinserted=0;
 	}
 
-        size = mul_size(sizeof(pgsshEntry), pgssh_max_entries);
-        PgsshEntryArray = (pgsshEntry *) ShmemInitStruct("pgssh Entry Array", size, &found);
+	if (pgssh_enable)
+	{
+        	size = mul_size(sizeof(pgsshEntry), pgssh_max_entries);
+        	PgsshEntryArray = (pgsshEntry *) ShmemInitStruct("pgssh Entry Array", size, &found);
 
-        if (!found)
-        {
-                MemSet(PgsshEntryArray, 0, size);
-        }
+        	if (!found)
+        	{
+                	MemSet(PgsshEntryArray, 0, size);
+        	}
+	}
 
 	size = mul_size(sizeof(procEntry), get_max_procs_count());
 	ProcEntryArray = (procEntry *) ShmemInitStruct("Proc Entry Array", size, &found);
@@ -1081,7 +1084,7 @@ pgsentinel_main(Datum main_arg)
 		pgstat_report_activity(STATE_IDLE, NULL);
 
 		/* pg_stat_statement_history */
-       		if (gotactives) 
+       		if (gotactives && pgssh_enable) 
 		{
 			uppercxt = CurrentMemoryContext;
 
@@ -1209,7 +1212,7 @@ pgsentinel_load_params(void)
 				                        "Enable pg_stat_statements_history.",
 							NULL,
 							&pgssh_enable,
-							true,
+							false,
 							PGC_SIGHUP,
 							0,
 							NULL,
@@ -1253,9 +1256,12 @@ _PG_init(void)
 	RequestAddinShmemSpace(int_entry_memsize());
 	RequestNamedLWLockTranche("Int Entry Array", 1);
 
-        EmitWarningsOnPlaceholders("Pgssh Entry Array");
-        RequestAddinShmemSpace(pgssh_entry_memsize());
-        RequestNamedLWLockTranche("Pgssh Entry Array", 1);
+	if (pgssh_enable)
+	{
+        	EmitWarningsOnPlaceholders("Pgssh Entry Array");
+        	RequestAddinShmemSpace(pgssh_entry_memsize());
+        	RequestNamedLWLockTranche("Pgssh Entry Array", 1);
+	}
 
 	/*
 	 * Install hooks.
@@ -1522,6 +1528,10 @@ pg_stat_statements_history_internal(FunctionCallInfo fcinfo)
 	MemoryContext oldcontext;
 	int i;
 
+	if (!pgssh_enable)
+		ereport(ERROR,
+			(errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),
+				errmsg("pg_stat_statements_history not enabled, set pgsentinel_pgssh.enable")));
 	/* Entry array must exist already */
 	if (!PgsshEntryArray)
 		ereport(ERROR,
