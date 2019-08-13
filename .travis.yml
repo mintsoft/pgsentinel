@@ -10,6 +10,12 @@ before_install:
 
 script:
   - cd src && make
+  - sudo make install
+  - .travis/configure_postgresql.sh
+  - .travis/start_postgresql.sh
+  - psql -U postgres -c "create user test with password 'test';"
+  - psql -U postgres -c "CREATE EXTENSION pgsentinel;"
+  - psql -c 'create database test owner test;' -U postgres
 
 after_failure:
   - .travis/cat_logs.sh
