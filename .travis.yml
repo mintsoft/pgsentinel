@@ -20,16 +20,6 @@ matrix:
         - PG_VERSION=HEAD
       sudo: required
     - env:
-        - PG_VERSION=HEAD
-        - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
-      sudo: required
-      addons:
-        apt:
-          sources:
-          - llvm-toolchain-trusty-5.0
-          packages:
-          - clang-5.0
-    - env:
         - PG_VERSION=10
       sudo: required
 
