@@ -9,7 +9,7 @@ before_install:
   - eval "${MATRIX_EVAL}"
 
 script:
-  - true
+  - cd src && make
 
 after_failure:
   - .travis/cat_logs.sh
